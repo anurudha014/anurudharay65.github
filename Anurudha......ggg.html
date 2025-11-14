@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EduHelp — Full App (Demo)</title>
+
+<!-- FontAwesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  :root{
+    --primary:#0066ff;
+    --accent:#00bcd4;
+    --bg:#f6f9fc;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --success:#16a34a;
+  }
+  body.dark{
+    --bg:#0b1220;
+    --card:#0f1724;
+    --text:#e6eef8;
+    --muted:#9aa6b2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter,system-ui,Arial,sans-serif; background:var(--bg); color:var(--text); transition:background .25s,color .25s;
+  }
+  a{ color:inherit }
+  /* NAV */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(90deg,var(--primary),var(--accent));
+    color:white; display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px; gap:12px;
+  }
+  .nav .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px }
+  .nav .brand img{ width:40px; height:40px; border-radius:8px; object-fit:cover }
+  .nav .links{ display:flex; gap:12px; align-items:center }
+  .nav .links a{ color:rgba(255,255,255,0.95); text-decoration:none; font-weight:600 }
+  .nav .actions{ display:flex; gap:8px; align-items:center }
+
+  .hamburger{ display:none; font-size:22px; background:none;border:0;color:white; cursor:pointer }
+
+  /* hero / slider */
+  .hero{ padding:40px 16px; text-align:center; color:white }
+  .hero .title{ font-size:32px; margin:0 0 8px }
+  .hero .sub{ margin:0 0 18px; opacity:.95 }
+
+  .slider{ max-width:1100px; margin:0 auto; position:relative; overflow:hidden; border-radius:12px; box-shadow:0 10px 30px rgba(2,6,23,.12) }
+  .slide{ display:flex; align-items:center; justify-content:center; min-height:200px; padding:40px; background-size:cover; background-position:center; color:white }
+  .slide .overlay{ background:linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2)); padding:30px; border-radius:8px }
+  .slider-controls{ position:absolute; right:12px; top:12px; display:flex; gap:8px }
+
+  /* page layout */
+  .wrap{ max-width:1100px; margin:18px auto; padding:0 16px }
+  .grid{ display:grid; grid-template-columns:1fr 320px; gap:18px; align-items:start }
+  .card{ background:var(--card); padding:14px; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,0.06) }
+
+  /* subject cards */
+  .subject-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:12px }
+  .subject-card{ display:flex; flex-direction:column; align-items:center; padding:16px; gap:8px; border-radius:10px; background:linear-gradient(180deg,white,#fbfdff); cursor:pointer; transition:transform .18s, box-shadow .18s }
+  .subject-card:hover{ transform:translateY(-6px); box-shadow:0 12px 30px rgba(2,6,23,0.08) }
+  .subject-card i{ font-size:28px; color:var(--primary) }
+  .subject-title{ font-weight:700; text-align:center; margin-top:6px }
+
+  /* notes list */
+  .notes-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px }
+  .note{ display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:10px; background:linear-gradient(180deg, #fff,#fbfdff); border:1px solid rgba(0,0,0,0.04) }
+  .note .meta{ display:flex; justify-content:space-between; align-items:center; gap:8px }
+  .note .desc{ color:var(--muted); font-size:13px }
+
+  /* small utility */
+  .muted{ color:var(--muted) }
+  .btn{ background:var(--primary); color:white; border:0; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700 }
+  .btn.ghost{ background:transparent; color:var(--primary); border:2px solid var(--primary) }
+  .btn.warn{ background:#e83e3e }
+  .pill{ padding:6px 10px; background:rgba(0,0,0,0.04); border-radius:999px; font-weight:700 }
+
+  /* admin panel */
+  .small-input{ width:100%; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); margin:8px 0 }
+
+  /* dashboard */
+  .dashboard { display:flex; gap:12px; flex-direction:column }
+  .bookmark { display:flex; gap:8px; align-items:center; justify-content:space-between }
+
+  /* modal */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:90 }
+  .modal{ width:90%; max-width:980px; background:var(--card); padding:16px; border-radius:10px; }
+
+  /* pdf viewer iframe */
+  .pdf-frame{ width:100%; height:70vh; border:0; }
+
+  footer{ padding:18px; text-align:center; color:var(--muted) }
+
+  @media(max-width:980px){
+    .grid{ grid-template-columns:1fr }
+    .nav .links{ display:none }
+    .hamburger{ display:block }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="brand">
+    <img src="https://images.unsplash.com/photo-1584697964190-2c3f03d0877c?q=80&w=600&auto=format&fit=crop&s=placeholder" alt="logo">
+    <div>EduHelp</div>
+  </div>
+
+  <nav class="links" id="mainLinks">
+    <a href="#home" data-nav>Home</a>
+    <a href="#subjects" data-nav>Subjects</a>
+    <a href="#notes" data-nav>Notes</a>
+    <a href="#dashboard" data-nav>Dashboard</a>
+    <a href="#" id="openAdminBtn">Admin Panel</a>
+    <a href="#contact" data-nav>Contact</a>
+  </nav>
+
+  <div class="actions">
+    <div id="userArea"></div>
+    <button class="btn ghost" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="hamburger" id="hambtn" aria-label="menu">☰</button>
+  </div>
+</header>
+
+<!-- HERO + SLIDER -->
+<section id="home" class="hero">
+  <div class="wrap">
+    <div class="slider" id="slider">
+      <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d')">
+        <div class="overlay">
+          <h2 style="margin:0">Learn. Ask. Grow.</h2>
+          <p style="margin:8px 0 0">Free notes, courses and practice papers — organized by class & subject.</p>
+        </div>
+      </div>
+      <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1529070538774-1843cb3265df')">
+        <div class="overlay">
+          <h2 style="margin:0">Arts & Science Collection</h2>
+          <p style="margin:8px 0 0">All major Arts & Science subjects with icons and easy downloads.</p>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px" class="slider-controls">
+      <button class="btn ghost" id="prevSlide">&larr;</button>
+      <button class="btn ghost" id="nextSlide">&rarr;</button>
+    </div>
+  </div>
+</section>
+
+<!-- SUBJECTS -->
+<section id="subjects" class="wrap">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 style="margin:0">Subjects</h2>
+        <div class="muted">Arts, Science & Commerce — click a subject to view subject page.</div>
+      </div>
+      <div>
+        <button class="btn" id="showAllBtn">Show All Notes</button>
+      </div>
+    </div>
+
+    <div class="subject-grid" id="subjectGrid"></div>
+  </div>
+</section>
+
+<!-- MAIN GRID: Notes + Sidebar -->
+<section class="wrap">
+  <div class="grid">
+    <!-- MAIN -->
+    <main>
+      <div id="notes" class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2 style="margin:0">Notes Library</h2>
+            <div class="muted">Search, filter by class/subject, preview PDF or download.</div>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="searchInput" placeholder="Search notes, titles..." style="padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)" />
+            <select id="filterCategory" class="small-input" style="width:160px">
+              <!-- categories populated dynamically -->
+            </select>
+            <select id="sortBy" class="small-input" style="width:140px">
+              <option value="new">Newest</option>
+              <option value="popular">Most Downloaded</option>
+              <option value="title">Title A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div id="notesGrid" class="notes-grid"></div>
+      </div>
+
+      <div id="subjectPage" style="display:none" class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 id="subjectTitle" style="margin:0"></h2>
+          <button class="btn ghost" id="backToNotes">Back</button>
+        </div>
+        <div id="subjectNotes" style="margin-top:12px"></div>
+      </div>
+
+      <div id="pdfModal" style="display:none"></div>
+    </main>
+
+    <!-- SIDEBAR -->
+    <aside>
+      <div class="card">
+        <h3 style="margin-top:0">Account</h3>
+        <div id="accountBox"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Add Note (Admin)</h3>
+        <p class="muted">Admins can add notes with file upload (small PDFs recommended).</p>
+
+        <form id="addNoteForm">
+          <input id="addTitle" class="small-input" placeholder="Title (e.g., Class 12 - Physics)" required />
+          <input id="addMeta" class="small-input" placeholder="Short description" />
+          <select id="addClass" class="small-input"></select>
+          <select id="addSubject" class="small-input"></select>
+          <input id="fileInput" type="file" accept="application/pdf" class="small-input" />
+          <button class="btn" type="submit">Add / Upload Note</button>
+        </form>
+        <div style="margin-top:8px" class="muted">Note: file stored in browser storage (demo). For production use external storage.</div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Dashboard</h3>
+        <div id="dashboardBox">
+          <div class="muted">Recent downloads</div>
+          <div id="recentDownloads" style="margin-top:8px"></div>
+          <div style="height:8px"></div>
+          <div class="muted">Bookmarks</div>
+          <div id="bookmarks" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="wrap" style="margin-top:12px">
+  <div class="card">
+    <h3 style="margin-top:0">Contact</h3>
+    <form id="contactForm">
+      <input id="contactName" class="small-input" placeholder="Your name" required />
+      <input id="contactEmail" class="small-input" placeholder="Your email" required />
+      <textarea id="contactMsg" class="small-input" placeholder="Message" rows="4" required></textarea>
+      <button class="btn" type="submit">Send Message</button>
+    </form>
+    <p class="muted" style="margin-top:8px">Messages saved locally. To enable email delivery, add EmailJS config in the script (comments provided).</p>
+  </div>
+</section>
+
+<footer>© 2025 EduHelp — Demo (client-side only)</footer>
+
+<!-- MODALS (rendered by JS) -->
+<div id="modalRoot"></div>
+
+<script>
+/* =========================
+   Storage keys & defaults
+   ========================= */
+const KEYS = {
+  USERS: 'edu_users_full_v1',
+  NOTES: 'edu_notes_full_v1',
+  SESSION: 'edu_session_full_v1',
+  HISTORY: 'edu_hist_full_v1',
+  BOOKMARKS: 'edu_bookmarks_v1',
+  CONTACTS: 'edu_contacts_v1',
+  THEME: 'edu_theme_v1'
+};
+
+/* DEFAULTS */
+function genId(){ return 'id_'+Math.random().toString(36).slice(2,9) }
+function load(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback } catch(e){ return fallback } }
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)) }
+
+/* Categories, classes and subjects (Arts + Science + Commerce) */
+const DEFAULT_CLASSES = ['All','Class 8','Class 9','Class 10','Class 11','Class 12','B.A.','B.S.C.'];
+const DEFAULT_SUBJECTS = [
+  // Arts
+  'History','Political Science','Geography','Economics','Sociology','Psychology','Philosophy','Hindi','English Literature','Sanskrit','Education','Home Science','Civics','Fine Arts','Public Administration','Anthropology','Music','Physical Education',
+  // Science
+  'Physics','Applied Physics','Electronics','Chemistry','Organic Chemistry','Inorganic Chemistry','Physical Chemistry','Biology','Botany','Zoology','Microbiology','Biotechnology','Environmental Science','Mathematics','Advanced Mathematics','Computer Science','Information Technology','Statistics',
+  // Commerce (optional)
+  'Accountancy','Business Studies','Entrepreneurship','Finance','Marketing'
+];
+
+/* Subject icon map (FontAwesome classes) */
+const ICONS = {
+  'History':'fa-landmark','Political Science':'fa-scale-balanced','Geography':'fa-earth-asia','Economics':'fa-chart-line','Sociology':'fa-users',
+  'Psychology':'fa-brain','Philosophy':'fa-book-open','Hindi':'fa-language','English Literature':'fa-feather','Sanskrit':'fa-scroll','Education':'fa-school',
+  'Home Science':'fa-bowl-food','Civics':'fa-gavel','Fine Arts':'fa-palette','Public Administration':'fa-building-flag','Anthropology':'fa-vihara',
+  'Music':'fa-music','Physical Education':'fa-person-running',
+  'Physics':'fa-atom','Applied Physics':'fa-bolt','Electronics':'fa-plug','Chemistry':'fa-flask','Organic Chemistry':'fa-vial','Inorganic Chemistry':'fa-cubes',
+  'Physical Chemistry':'fa-temperature-half','Biology':'fa-dna','Botany':'fa-seedling','Zoology':'fa-paw','Microbiology':'fa-virus','Biotechnology':'fa-dna',
+  'Environmental Science':'fa-leaf','Mathematics':'fa-square-root-variable','Advanced Mathematics':'fa-square-root-variable','Computer Science':'fa-computer','Information Technology':'fa-microchip','Statistics':'fa-chart-bar',
+  'Accountancy':'fa-receipt','Business Studies':'fa-briefcase','Entrepreneurship':'fa-lightbulb','Finance':'fa-piggy-bank','Marketing':'fa-bullhorn'
+};
+
+/* set up storage defaults if not exist */
+if(!load(KEYS.USERS)) save(KEYS.USERS, {}); // object of email -> {name,passHash,isAdmin}
+if(!load(KEYS.NOTES)) {
+  const sample = [
+    { id:genId(), title:'Class 10 - Math Notes (Sample)', meta:'Algebra & Geometry', class:'Class 10', subject:'Mathematics', downloads:0, fileUrl:'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', created: Date.now()-2000000 },
+    { id:genId(), title:'Class 9 - Science Summary (Sample)', meta:'Physics basics', class:'Class 9', subject:'Physics', downloads:0, fileUrl:'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', created: Date.now()-1500000 },
+    { id:genId(), title:'B.Sc. Biology - Intro (Sample)', meta:'Cell & Genetics', class:'B.S.C.', subject:'Biology', downloads:0, fileUrl:'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', created: Date.now()-1200000 }
+  ];
+  save(KEYS.NOTES, sample);
+}
+if(!load(KEYS.HISTORY)) save(KEYS.HISTORY, {});
+if(!load(KEYS.BOOKMARKS)) save(KEYS.BOOKMARKS, {});
+if(!load(KEYS.CONTACTS)) save(KEYS.CONTACTS, []);
+
+/* ===========================
+   Crypto helper: SHA-256 hex
+   =========================== */
+async function sha256Hex(str){
+  const enc = new TextEncoder();
+  const data = enc.encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ===========================
+   UI refs
+   =========================== */
+const subjectGrid = document.getElementById('subjectGrid');
+const notesGrid = document.getElementById('notesGrid');
+const filterCategory = document.getElementById('filterCategory');
+const searchInput = document.getElementById('searchInput');
+const sortBy = document.getElementById('sortBy');
+const addNoteForm = document.getElementById('addNoteForm');
+const addClass = document.getElementById('addClass');
+const addSubject = document.getElementById('addSubject');
+const fileInput = document.getElementById('fileInput');
+const userArea = document.getElementById('userArea');
+const accountBox = document.getElementById('accountBox');
+const dashboardBox = document.getElementById('dashboardBox');
+const recentDownloads = document.getElementById('recentDownloads');
+const bookmarksDiv = document.getElementById('bookmarks');
+const modalRoot = document.getElementById('modalRoot');
+const openAdminBtn = document.getElementById('openAdminBtn');
+const themeToggle = document.getElementById('themeToggle');
+const hambtn = document.getElementById('hambtn');
+const mainLinks = document.getElementById('mainLinks');
+const subjectPage = document.getElementById('subjectPage');
+const subjectTitle = document.getElementById('subjectTitle');
+const subjectNotes = document.getElementById('subjectNotes');
+const backToNotes = document.getElementById('backToNotes');
+const showAllBtn = document.getElementById('showAllBtn');
+
+/* ===========================
+   Hamburger + mobile links
+   =========================== */
+hambtn.addEventListener('click', ()=> {
+  mainLinks.style.display = mainLinks.style.display === 'flex' ? 'none' : 'flex';
+});
+document.querySelectorAll('[data-nav]').forEach(a=>a.addEventListener('click', (e)=>{
+  // close mobile menu
+  if(window.innerWidth < 980) mainLinks.style.display='none';
+}));
+
+/* ===========================
+   Slider controls
+   =========================== */
+let slideIndex = 0;
+const slides = Array.from(document.querySelectorAll('.slide'));
+function showSlide(i){
+  slides.forEach((s,idx)=> s.style.display = (idx===i ? 'block' : 'none'));
+}
+document.getElementById('prevSlide').addEventListener('click', ()=>{ slideIndex = (slideIndex-1+slides.length)%slides.length; showSlide(slideIndex) });
+document.getElementById('nextSlide').addEventListener('click', ()=>{ slideIndex = (slideIndex+1)%slides.length; showSlide(slideIndex) });
+setInterval(()=>{ slideIndex = (slideIndex+1)%slides.length; showSlide(slideIndex) }, 7000);
+showSlide(0);
+
+/* ===========================
+   Theme toggle (saved)
+   =========================== */
+function applyTheme(){
+  const t = localStorage.getItem(KEYS.THEME) || 'light';
+  if(t === 'dark') document.body.classList.add('dark'); else document.body.classList.remove('dark');
+  themeToggle.textContent = t==='dark' ? '☀️' : '🌙';
+}
+themeToggle.addEventListener('click', ()=>{
+  const now = document.body.classList.toggle('dark');
+  localStorage.setItem(KEYS.THEME, now ? 'dark' : 'light');
+  applyTheme();
+});
+applyTheme();
+
+/* ===========================
+   Populate classes and subjects in admin form & filters
+   =========================== */
+function populateClassSubjectOptions(){
+  addClass.innerHTML = '';
+  filterCategory.innerHTML = '';
+  DEFAULT_CLASSES.forEach(c=>{
+    const opt = document.createElement('option'); opt.value=c; opt.textContent=c; addClass.appendChild(opt);
+    const opt2 = document.createElement('option'); opt2.value=c; opt2.textContent=c; filterCategory.appendChild(opt2);
+  });
+  // add "All" at top of filter
+  filterCategory.insertBefore(document.createElement('option'), filterCategory.firstChild);
+  filterCategory.firstChild.value='All'; filterCategory.firstChild.textContent='All';
+  addSubject.innerHTML = '';
+  DEFAULT_SUBJECTS.forEach(s=>{
+    const o = document.createElement('option'); o.value=s; o.textContent=s; addSubject.appendChild(o);
+  });
+}
+populateClassSubjectOptions();
+
+/* ===========================
+   Render subject grid with icons
+   =========================== */
+function renderSubjects(){
+  subjectGrid.innerHTML = '';
+  // Show grouping: highlight classes first
+  DEFAULT_CLASSES.slice(1).forEach(cls=>{
+    const el = document.createElement('div'); el.className='subject-card';
+    el.innerHTML = `<i class="fa-solid fa-school"></i><div class="subject-title">${cls}</div>`;
+    el.addEventListener('click', ()=> selectClassAndShow(cls));
+    subjectGrid.appendChild(el);
+  });
+
+  // Show subjects with icons
+  DEFAULT_SUBJECTS.forEach(s=>{
+    const icon = ICONS[s] || 'fa-book';
+    const el = document.createElement('div'); el.className='subject-card';
+    el.innerHTML = `<i class="fa-solid ${icon}"></i><div class="subject-title">${s}</div>`;
+    el.addEventListener('click', ()=> openSubjectPage(s));
+    subjectGrid.appendChild(el);
+  });
+}
+renderSubjects();
+
+/* ===========================
+   Render notes with filters & search
+   =========================== */
+let activeFilter = 'All';
+let searchQ = '';
+let sortMode = 'new';
+filterCategory.addEventListener('change', ()=> { activeFilter = filterCategory.value; renderNotes(); })
+searchInput.addEventListener('input', (e)=> { searchQ = e.target.value.trim().toLowerCase(); renderNotes(); })
+sortBy.addEventListener('change', ()=> { sortMode = sortBy.value; renderNotes(); })
+
+function getNotes(){ return load(KEYS.NOTES, []) }
+
+function renderNotes(){
+  const all = getNotes().slice();
+  // filter by class or subject
+  let filtered = all.filter(n=>{
+    if(activeFilter && activeFilter !== 'All'){
+      // if selected is a class present in DEFAULT_CLASSES -> filter by class
+      if(DEFAULT_CLASSES.includes(activeFilter)) return (n.class === activeFilter);
+      // else treat as subject filter
+      return (n.subject === activeFilter);
+    }
+    return true;
+  });
+  // search
+  if(searchQ){
+    filtered = filtered.filter(n => (n.title + ' ' + (n.meta||'') + ' ' + (n.class||'') + ' ' + (n.subject||'')).toLowerCase().includes(searchQ));
+  }
+  // sort
+  if(sortMode === 'new') filtered.sort((a,b)=> (b.created||0)-(a.created||0));
+  else if(sortMode === 'popular') filtered.sort((a,b)=> (b.downloads||0)-(a.downloads||0));
+  else if(sortMode === 'title') filtered.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+
+  notesGrid.innerHTML = '';
+  filtered.forEach(n=>{
+    const div = document.createElement('div'); div.className='note';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>${escape(n.title)}</strong><div class="muted">${escape(n.class)} — ${escape(n.subject)}</div></div>
+        <div style="text-align:right">
+          <div class="muted" style="font-size:12px">Downloads</div>
+          <div style="font-weight:800">${n.downloads||0}</div>
+        </div>
+      </div>
+      <div class="desc">${escape(n.meta||'')}</div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px">
+        <button class="btn small previewBtn" data-id="${n.id}"><i class="fa-regular fa-eye"></i> Preview</button>
+        <button class="btn small" data-id="${n.id}" style="background:var(--success)"><i class="fa-solid fa-download"></i> Download</button>
+        <button class="btn ghost small bookmarkBtn" data-id="${n.id}"><i class="fa-regular fa-bookmark"></i> Bookmark</button>
+        ${isAdmin() ? `<button class="btn warn small deleteNoteBtn" data-id="${n.id}"><i class="fa-solid fa-trash"></i> Delete</button>`:''}
+      </div>
+    `;
+    notesGrid.appendChild(div);
+
+    // handlers
+    div.querySelector('.previewBtn').addEventListener('click', ()=> previewNote(n));
+    div.querySelector('.btn[data-id][style*="background:var(--success)"]').addEventListener('click', ()=> downloadNote(n));
+    div.querySelector('.bookmarkBtn').addEventListener('click', ()=> toggleBookmark(n.id));
+    if(isAdmin()){
+      div.querySelector('.deleteNoteBtn').addEventListener('click', ()=> deleteNote(n.id));
+    }
+  });
+
+  // update total etc
+  document.getElementById('totalNotes') && (document.getElementById('totalNotes').innerText = getNotes().length);
+}
+
+renderNotes();
+
+/* ===========================
+   Note actions: preview, download, bookmark, delete
+   =========================== */
+function previewNote(note){
+  // Create modal with iframe pointing to blob URL if fileUrl is data:, or direct link otherwise
+  openModal(`<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escape(note.title)}</h3><div><button class="btn" id="openInNew">Open in new tab</button><button class="btn ghost" id="closeModal">Close</button></div></div><hr/><iframe class="pdf-frame" src="${getBlobUrlFor(note.fileUrl)}"></iframe>`, true);
+  document.getElementById('openInNew')?.addEventListener('click', ()=> window.open(getBlobUrlFor(note.fileUrl),'_blank'));
+  document.getElementById('closeModal')?.addEventListener('click', closeModal);
+}
+
+function getBlobUrlFor(fileUrl){
+  // if fileUrl starts with data: (base64) just return it — browsers will display it in iframe
+  // For cross-origin remote pdfs, returning their URL is fine.
+  return fileUrl;
+}
+
+async function downloadNote(note){
+  const sess = load(KEYS.SESSION);
+  if(!sess || !sess.email){ alert('Please login to download'); showAuthModal(); return; }
+  // increment counters
+  const notes = getNotes();
+  const idx = notes.findIndex(x=>x.id===note.id);
+  if(idx>=0){ notes[idx].downloads = (notes[idx].downloads||0) + 1; save(KEYS.NOTES, notes); }
+  // user history
+  const hist = load(KEYS.HISTORY, {}); if(!hist[sess.email]) hist[sess.email] = {}; hist[sess.email][note.id] = (hist[sess.email][note.id]||0)+1; save(KEYS.HISTORY, hist);
+  renderNotes(); refreshDashboard();
+  // trigger download/open
+  window.open(getBlobUrlFor(note.fileUrl),'_blank');
+}
+
+function toggleBookmark(noteId){
+  const sess = load(KEYS.SESSION);
+  if(!sess || !sess.email){ alert('Please login to bookmark'); showAuthModal(); return; }
+  const bm = load(KEYS.BOOKMARKS, {});
+  if(!bm[sess.email]) bm[sess.email]=[];
+  const arr = bm[sess.email];
+  const idx = arr.indexOf(noteId);
+  if(idx === -1) arr.push(noteId); else arr.splice(idx,1);
+  save(KEYS.BOOKMARKS, bm);
+  refreshDashboard();
+}
+
+function deleteNote(id){
+  if(!confirm('Delete this note?')) return;
+  const notes = getNotes().filter(n=>n.id!==id);
+  save(KEYS.NOTES, notes);
+  renderNotes();
+  refreshDashboard();
+}
+
+/* ===========================
+   Admin add note (with file upload)
+   =========================== */
+addNoteForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!isAdmin()){ alert('Only admin can add notes. Sign up as admin@eduhelp.com for demo.'); return; }
+  const title = document.getElementById('addTitle').value.trim();
+  const meta = document.getElementById('addMeta').value.trim();
+  const cls = document.getElementById('addClass').value;
+  const subj = document.getElementById('addSubject').value;
+  const file = fileInput.files[0];
+  if(!title || !cls || !subj){ alert('Title, class and subject required'); return; }
+
+  let fileUrl = '';
+  if(file){
+    // read as data URL (beware size)
+    const maxMB = 5;
+    if(file.size > maxMB * 1024 * 1024){
+      if(!confirm(`File is ${(file.size/1024/1024).toFixed(2)}MB — large files may exceed browser storage. Continue?`)) return;
+    }
+    fileUrl = await fileToDataUrl(file);
+  } else {
+    // no file chosen -> prompt for external URL
+    fileUrl = prompt('No file selected. Enter external PDF URL (https://...)') || '';
+    if(!fileUrl){ alert('No file provided'); return; }
+  }
+
+  const notes = getNotes();
+  notes.unshift({ id:genId(), title, meta, class:cls, subject:subj, downloads:0, fileUrl, created: Date.now() });
+  save(KEYS.NOTES, notes);
+  addNoteForm.reset();
+  renderNotes(); refreshDashboard();
+  alert('Note added (demo storage).');
+});
+
+/* helper: file -> data URL */
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=> res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ===========================
+   AUTH: Signup / Login / Logout (simple, client-side)
+   =========================== */
+function showAuthModal(){ openAuthModal(); }
+
+function isAdmin(){
+  const sess = load(KEYS.SESSION);
+  if(!sess) return false;
+  const users = load(KEYS.USERS, {});
+  const u = users[sess.email];
+  return u && u.isAdmin;
+}
+
+/* Render account box, user area, login UI */
+function refreshAccountUI(){
+  const sess = load(KEYS.SESSION);
+  const users = load(KEYS.USERS, {});
+  if(sess && sess.email){
+    const u = users[sess.email] || { name:sess.email, isAdmin:false };
+    userArea.innerHTML = `<div class="pill">${escape(u.name||sess.email)}</div>`;
+    accountBox.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:800">${escape(u.name||sess.email)}</div>
+      <div class="muted">${escape(sess.email)}</div>
+      ${u.isAdmin?'<div class="pill">Admin</div>':''}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" id="logoutBtn">Logout</button>
+        <button class="btn ghost" id="openDashboard">Dashboard</button>
+      </div>
+    </div>`;
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{ logout(); });
+    document.getElementById('openDashboard').addEventListener('click', ()=> openDashboard());
+  } else {
+    userArea.innerHTML = `<button class="btn ghost" id="openAuth">Login / Signup</button>`;
+    accountBox.innerHTML = `<div class="muted">Not logged in. Sign up or login to download and bookmark notes.</div><div style="margin-top:8px"><button class="btn" id="openAuth2">Login / Signup</button></div>`;
+    document.getElementById('openAuth')?.addEventListener('click', ()=> openAuthModal());
+    document.getElementById('openAuth2')?.addEventListener('click', ()=> openAuthModal());
+  }
+}
+refreshAccountUI();
+
+/* AUTH modal implementation (inline lightweight) */
+function openAuthModal(){
+  const html = `
+    <div class="modal-backdrop" id="authBackdrop">
+      <div class="modal">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Login / Signup</h3>
+          <button class="btn ghost" id="closeAuthBtn">Close</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" id="showSignupBtn">Signup</button>
+          <button class="btn ghost" id="showLoginBtn">Login</button>
+        </div>
+        <div id="authForms" style="margin-top:12px"></div>
+      </div>
+    </div>
+  `;
+  modalRoot.innerHTML = html;
+  document.getElementById('closeAuthBtn').addEventListener('click', ()=> modalRoot.innerHTML='');
+  document.getElementById('showSignupBtn').addEventListener('click', ()=> renderSignupForm());
+  document.getElementById('showLoginBtn').addEventListener('click', ()=> renderLoginForm());
+  renderLoginForm();
+}
+
+function renderSignupForm(){
+  const container = document.getElementById('authForms');
+  container.innerHTML = `
+    <form id="signupForm">
+      <input id="suName" placeholder="Full name" class="small-input" required />
+      <input id="suEmail" type="email" placeholder="Email" class="small-input" required />
+      <input id="suPass" type="password" placeholder="Password (min 6)" class="small-input" required />
+      <div style="display:flex;gap:8px">
+        <button class="btn" type="submit">Create account</button>
+      </div>
+    </form>
+  `;
+  document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('suName').value.trim();
+    const email = document.getElementById('suEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('suPass').value;
+    if(pass.length < 6){ alert('Password min 6 chars'); return; }
+    const users = load(KEYS.USERS, {});
+    if(users[email]){ alert('Account exists — please login'); return; }
+    const ph = await sha256Hex(pass);
+    users[email] = { name: name || email, passHash: ph, isAdmin: email === 'admin@eduhelp.com' };
+    save(KEYS.USERS, users);
+    save(KEYS.SESSION, { email });
+    modalRoot.innerHTML='';
+    refreshAccountUI(); renderNotes(); refreshDashboard();
+    alert('Account created & logged in');
+  });
+}
+
+function renderLoginForm(){
+  const container = document.getElementById('authForms');
+  container.innerHTML = `
+    <form id="loginForm">
+      <input id="liEmail" type="email" placeholder="Email" class="small-input" required />
+      <input id="liPass" type="password" placeholder="Password" class="small-input" required />
+      <div style="display:flex;gap:8px">
+        <button class="btn" type="submit">Login</button>
+      </div>
+    </form>
+  `;
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('liEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('liPass').value;
+    const users = load(KEYS.USERS, {});
+    const u = users[email];
+    if(!u){ alert('No account — please signup'); return; }
+    const ph = await sha256Hex(pass);
+    if(ph !== u.passHash){ alert('Incorrect password'); return; }
+    save(KEYS.SESSION, { email });
+    modalRoot.innerHTML='';
+    refreshAccountUI(); renderNotes(); refreshDashboard();
+    alert('Logged in');
+  });
+}
+
+function logout(){ localStorage.removeItem(KEYS.SESSION); refreshAccountUI(); }
+
+/* open admin panel — simple modal (only for admin) */
+openAdminBtn.addEventListener('click', ()=> {
+  const sess = load(KEYS.SESSION);
+  if(!sess || !sess.email){ alert('Please login as admin@eduhelp.com'); openAuthModal(); return; }
+  const users = load(KEYS.USERS, {});
+  const u = users[sess.email];
+  if(!u || !u.isAdmin){ alert('Only admin allowed. Sign up as admin@eduhelp.com for demo.'); return; }
+  openModal(`<div style="display:flex;justify-content:space-between;align-items:center"><h3>Admin Panel</h3><button class="btn ghost" id="closeAdmin">Close</button></div>
+    <hr/>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1">
+        <h4>Create note</h4>
+        <form id="adminAddForm">
+          <input id="admTitle" class="small-input" placeholder="Title" required />
+          <input id="admMeta" class="small-input" placeholder="Short description" />
+          <select id="admClass" class="small-input"></select>
+          <select id="admSubject" class="small-input"></select>
+          <input id="admFile" type="file" accept="application/pdf" class="small-input"/>
+          <button class="btn" type="submit">Add note</button>
+        </form>
+      </div>
+      <div style="width:320px">
+        <h4>Existing notes</h4>
+        <div id="adminNotesList"></div>
+      </div>
+    </div>`, true);
+
+  // populate selects
+  const admClass = document.getElementById('admClass'); const admSubject = document.getElementById('admSubject');
+  admClass.innerHTML=''; admSubject.innerHTML='';
+  DEFAULT_CLASSES.forEach(c=> admClass.appendChild(new Option(c,c)));
+  DEFAULT_SUBJECTS.forEach(s=> admSubject.appendChild(new Option(s,s)));
+
+  // admins add form
+  document.getElementById('adminAddForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const t = document.getElementById('admTitle').value.trim();
+    const meta = document.getElementById('admMeta').value.trim();
+    const c = document.getElementById('admClass').value;
+    const s = document.getElementById('admSubject').value;
+    const f = document.getElementById('admFile').files[0];
+    let fileUrl = '';
+    if(f){ fileUrl = await fileToDataUrl(f); }
+    if(!t || !c || !s){ alert('Missing'); return; }
+    const notes = getNotes(); notes.unshift({ id:genId(), title:t, meta, class:c, subject:s, downloads:0, fileUrl: fileUrl || '', created: Date.now() });
+    save(KEYS.NOTES, notes); renderNotes(); refreshAdminList(); alert('Added');
+  });
+
+  refreshAdminList();
+  document.getElementById('closeAdmin').addEventListener('click', closeModal);
+});
+
+function refreshAdminList(){
+  const list = document.getElementById('adminNotesList');
+  const notes = getNotes();
+  list.innerHTML = notes.map(n=> `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-radius:6px;margin-bottom:6px;background:rgba(0,0,0,0.02)"><div><strong>${escape(n.title)}</strong><div class="muted">${escape(n.class)} • ${escape(n.subject)}</div></div><div><button class="btn warn" data-id="${n.id}">Delete</button></div></div>`).join('');
+  list.querySelectorAll('button[data-id]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.getAttribute('data-id');
+      if(confirm('Delete note?')){ deleteNote(id); refreshAdminList(); }
+    });
+  });
+}
+
+/* ===========================
+   Dashboard: recent downloads & bookmarks
+   =========================== */
+function refreshDashboard(){
+  // recent downloads for current user
+  const sess = load(KEYS.SESSION);
+  recentDownloads.innerHTML = '';
+  bookmarksDiv.innerHTML = '';
+  if(sess && sess.email){
+    const hist = load(KEYS.HISTORY, {}); const userHist = hist[sess.email] || {};
+    const notes = getNotes();
+    const items = Object.entries(userHist).sort((a,b)=> b[1]-a[1]).slice(0,6);
+    items.forEach(([id,count])=>{
+      const note = notes.find(n=>n.id===id);
+      if(!note) return;
+      const el = document.createElement('div'); el.className='muted'; el.innerHTML = `${escape(note.title)} — ${count} downloads`;
+      recentDownloads.appendChild(el);
+    });
+    // bookmarks
+    const bm = load(KEYS.BOOKMARKS, {}); const arr = (bm[sess.email] || []);
+    arr.forEach(id=>{
+      const note = notes.find(n=>n.id===id);
+      if(!note) return;
+      const el = document.createElement('div'); el.className='bookmark'; el.innerHTML = `<div style="flex:1">${escape(note.title)}</div><div><button class="btn small" data-id="${id}">Open</button></div>`;
+      bookmarksDiv.appendChild(el);
+      el.querySelector('button').addEventListener('click', ()=> previewNote(note));
+    });
+  } else {
+    recentDownloads.innerHTML = '<div class="muted">Login to see your downloads</div>';
+    bookmarksDiv.innerHTML = '<div class="muted">Login to bookmark notes</div>';
+  }
+}
+refreshDashboard();
+
+/* ===========================
+   Subject page view + jump from subject card
+   =========================== */
+function openSubjectPage(subject){
+  // render subject-specific notes
+  subjectTitle.innerText = subject;
+  subjectNotes.innerHTML = '';
+  const notes = getNotes().filter(n=> n.subject === subject);
+  if(notes.length===0) subjectNotes.innerHTML = `<div class="muted">No notes yet for ${subject}.</div>`;
+  else notes.forEach(n=>{
+    const el = document.createElement('div'); el.className='note'; el.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escape(n.title)}</strong><div class="muted">${escape(n.class)}</div></div><div><button class="btn small" onclick='previewNote(${JSON.stringify(n).replaceAll("'",'&#39;')})'>Preview</button></div></div><div class="desc">${escape(n.meta||'')}</div>`;
+    subjectNotes.appendChild(el);
+  });
+  document.getElementById('notes').style.display='none';
+  subjectPage.style.display='block';
+  window.scrollTo({top:document.getElementById('notes').offsetTop-60, behavior:'smooth'});
+}
+backToNotes.addEventListener('click', ()=> { subjectPage.style.display='none'; document.getElementById('notes').style.display='block' });
+
+function selectClassAndShow(cls){
+  // set filter and scroll to notes
+  filterCategory.value = cls;
+  activeFilter = cls; renderNotes();
+  window.location.hash = '#notes';
+  window.scrollTo({top:document.getElementById('notes').offsetTop-60, behavior:'smooth'});
+}
+showAllBtn.addEventListener('click', ()=>{ filterCategory.value='All'; activeFilter='All'; renderNotes(); window.location.hash='#notes'; });
+
+/* ===========================
+   Utilities: modal, escape, file handling
+   =========================== */
+function openModal(innerHtml, large=false){
+  modalRoot.innerHTML = `<div class="modal-backdrop">${typeof innerHtml === 'string' ? innerHtml : ''}</div>`;
+  const mb = modalRoot.firstChild;
+  mb.firstChild.className = 'modal';
+  if(large) mb.firstChild.style.maxWidth = '95%';
+  // attach close handlers for elements with id closeModal
+  setTimeout(()=>{ document.querySelectorAll('#closeModal, #closeAuthBtn').forEach(b=>b.addEventListener('click', closeModal)); }, 50);
+}
+function closeModal(){ modalRoot.innerHTML=''; }
+function escape(s){ if(!s) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+/* ===========================
+   Contact form (stores locally)
+   =========================== */
+document.getElementById('contactForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const msg = document.getElementById('contactMsg').value.trim();
+  if(!name || !email || !msg) return alert('Fill all fields');
+  const arr = load(KEYS.CONTACTS, []);
+  arr.unshift({ id: genId(), name, email, msg, created: Date.now() });
+  save(KEYS.CONTACTS, arr);
+  alert('Message saved (demo). To send emails enable EmailJS or backend.');
+  document.getElementById('contactForm').reset();
+});
+
+/* ===========================
+   Helpers & boot
+   =========================== */
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=> res(fr.result);
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+/* initial render & auth state */
+function init(){
+  renderSubjects();
+  renderNotes();
+  refreshAccountUI();
+  refreshDashboard();
+}
+init();
+
+/* accessibility: close modal on Escape */
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+</script>
+</body>
+</html>
